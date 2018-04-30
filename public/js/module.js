@@ -22,11 +22,21 @@
             case 0:
                 return "green";
             case 1:
-                return "orange";
+                return "lightgreen";
             case 2:
-                return "red";
+                return "lightred";
             case 3:
-                return "purple";
+                return "pink";
+            case 31:
+                return "orange";
+            case 32:
+                return "red";
+            case 33:
+                return "violet";
+            case 61:
+                return "darkred";
+            case 63:
+                return "violet";
             default:
                 return "blue";
         }
@@ -50,7 +60,7 @@
     function unique(list) {
         var result = [];
         $.each(list, function (i, e) {
-            if ($.inArray(e, result) == -1) result.push(e);
+            if ($.inArray(e, result) === -1) result.push(e);
         });
         return result;
     }
@@ -121,7 +131,7 @@
             }
 
             var tmp = sURLVariables[i].split('=');
-            if (tmp[0] == pkey) {
+            if (tmp[0] === pkey) {
                 sURLVariables[i] = tmp[0] + '=' + pvalue;
                 updated = true;
                 break;
@@ -138,55 +148,13 @@
     }
 
     function getWorstState(states) {
-        var worstState = 0
-        var allPending = -1
-        var allUnknown = -1
-        var last = -1
-
-        if (states.length == 1) {
-            return states[0];
-        }
-
+        var worstState = -1;
         for (var i = 0, len = states.length; i < len; i++) {
-            var state = states[i]
-            if (state < 3) {
-                if (allPending == 1) {
-                    allPending = 0
-                } else if (allUnknown == 1) {
-                    allUnknown = 0
-                }
-            }
-
-            if (state > 2) {
-                // PENDING
-                if (state == 99 && allPending < 0 && last < 0) {
-                    allPending = 1
-                }
-
-                // UNKNOWN
-                if (state == 3 && allUnknown < 0 && last < 0) {
-                    allUnknown = 1
-                }
-
-                // treat PENDING and UNKNOWN at the moment as OK
-                state = 0
-            }
-
+            var state = states[i];
             if (state > worstState) {
                 worstState = state
             }
-
-            last = state
         }
-
-        if (allPending == 1) {
-            worstState = 99
-        }
-
-        if (allUnknown == 1) {
-            worstState = 3
-        }
-
         return worstState;
     }
 
@@ -238,8 +206,8 @@
         updateAllMapData: function () {
             var _this = this;
 
-            if (cache.length == 0) {
-                this.removeTimer(id)
+            if (cache.length === 0) {
+                this.removeTimer(id);
                 return this
             }
 
@@ -299,8 +267,8 @@
 
                 $.each(json, function (type, element) {
                     $.each(element, function (identifier, data) {
-                        if (data.length < 1 || data['coordinates'] == "") {
-                            console.log('found empty coordinates: ' + data)
+                        if (data.length < 1 || data['coordinates'] === "") {
+                            console.log('found empty coordinates: ' + data);
                             return true
                         }
 
@@ -311,7 +279,8 @@
                         var display_name = (data['host_display_name'] ? data['host_display_name'] : hostname);
 
                         if (type === 'hosts') {
-                            states.push((data['host_state'] == 1 ? 2 : data['host_state']))
+                            var host_state = parseInt(data['host_state']);
+                            states.push(host_state === 0 || parseInt(data['host_acknowledged']) === 1 || parseInt(data['host_in_downtime']) === 1 ? host_state : host_state + 60);
                         }
 
                         services = '<div class="map-popup-services">';
@@ -321,14 +290,22 @@
                         services += '<tbody>';
 
                         $.each(data['services'], function (service_display_name, service) {
-                            states.push(service['service_state'])
+                            var service_state = parseInt(service['service_state']);
+                            //console.log('service: ' + service['service_state']);
+                            //states.push(service['service_state'])
+                            //console.log('service_acknowledged: ' + service['service_acknowledged']);
+                            states.push(service_state === 0 || service_state === 99 || parseInt(service['service_acknowledged']) === 1 || parseInt(service['service_in_downtime']) === 1 ? service_state : service_state + 30);
+                            if (service_state !== 0) {
+                                console.log('  state: ' + service_state);
+                            }
+                            //console.log('   states: ' + states);
 
                             services += '<tr>';
 
                             services += '<td class="';
                             services += "state-col";
                             services += " state-" + service_status[service['service_state']][1].toLowerCase();
-                            services += "" + (service['service_acknowledged'] == 1 || service['service_in_downtime'] == 1 ? " handled" : "");
+                            services += "" + (parseInt(service['service_acknowledged']) === 1 || parseInt(service['service_in_downtime']) === 1 ? " handled" : "");
                             services += '">';
                             services += '<div class="state-label">';
                             services += service_status[service['service_state']][0];
@@ -345,8 +322,8 @@
                                 + service['service_name']
                                 + '">';
                             services += service_display_name;
-                            services += '</a>'
-                            services += '</div>'
+                            services += '</a>';
+                            services += '</div>';
                             services += '</td>';
 
                             services += '</tr>';
@@ -371,11 +348,11 @@
                         icon = colorMarker(worstState, marker_icon);
 
                         var host_icon = "";
-                        if (data['host_icon_image'] != "") {
+                        if (data['host_icon_image'] !== "") {
                             host_icon = '<img src="' + icinga.config.baseUrl + '/img/icons/'
                                 + data['host_icon_image']
                                 + '"'
-                                + ((data['host_icon_image_alt'] != "") ? ' alt="' + data['host_icon_image_alt'] + '"' : '')
+                                + ((data['host_icon_image_alt'] !== "") ? ' alt="' + data['host_icon_image_alt'] + '"' : '')
                                 + ' class="host-icon-image icon">';
                         }
 
@@ -423,7 +400,7 @@
                 // TODO: Should be updated instant and not only on data refresh
                 cache[id].map.invalidateSize();
 
-                if (show_host != "") {
+                if (show_host !== "") {
                     showHost(show_host);
                     show_host = ""
                 }

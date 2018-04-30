@@ -15,6 +15,11 @@
     service_status[1] = ['<?= $this->translate('WARNING', 'icinga.state') ?>', 'WARNING'];
     service_status[2] = ['<?= $this->translate('CRITICAL', 'icinga.state') ?>', 'CRITICAL'];
     service_status[3] = ['<?= $this->translate('UNKNOWN', 'icinga.state') ?>', 'UNKNOWN'];
+    // Are these necessary? Correct?
+    service_status[31] = ['<?= $this->translate('WARNING', 'icinga.state') ?>', 'WARNING'];
+    service_status[32] = ['<?= $this->translate('CRITICAL', 'icinga.state') ?>', 'CRITICAL'];
+    service_status[33] = ['<?= $this->translate('UNKNOWN', 'icinga.state') ?>', 'UNKNOWN'];
+    // -/
     service_status[99] = ['<?= $this->translate('PENDING', 'icinga.state') ?>', 'PENDING'];
 
     // @TODO: Is there a better way of translation in JS-Code?
